@@ -605,9 +605,22 @@ function sbChange(p){
 function showLogin(msg){
   let el = $('#login'); if(!el){ el = document.createElement('div'); el.id = 'login'; el.className = 'login'; document.body.appendChild(el); }
   el.innerHTML = `<div class="lgcard"><img src="${LOGO}" alt="Tara x Mattel"><h1>Budget Tara x Mattel</h1><p class="muted" style="margin:4px 0 0">Khusus berdua</p>
-    <form data-form="login"><label class="lbl" for="lg-email">Email</label><input class="f" type="email" id="lg-email" name="email" required placeholder="nama@email.com" autocomplete="email"><button class="btn lg" style="justify-content:center">Kirim link masuk</button></form>
-    <small id="lg-msg" style="display:block;margin-top:14px;${msg?'color:var(--red)':''}">${msg ? esc(msg) : 'Kami kirim link masuk ke email kamu. Tanpa password.'}</small></div>`;
+    <form data-form="login"><label class="lbl" for="lg-email">Email</label><input class="f" type="email" id="lg-email" name="email" required placeholder="nama@email.com" autocomplete="email">
+      <label class="lbl" for="lg-pw" style="margin-top:4px">Password</label><input class="f" type="password" id="lg-pw" name="password" placeholder="Password" autocomplete="current-password">
+      <button class="btn lg" style="justify-content:center">Masuk</button>
+      <button class="btn line" type="button" data-act="magiclink" style="justify-content:center">Kirim link masuk ke email</button></form>
+    <small id="lg-msg" style="display:block;margin-top:14px;${msg?'color:var(--red)':''}">${msg ? esc(msg) : 'Belum punya password? Masuk sekali lewat link email, lalu buat password di menu Pengaturan.'}</small></div>`;
 }
+async function sendMagicLink(){
+  const inp = $('#lg-email'), m = $('#lg-msg'), email = (inp?.value||'').trim().toLowerCase();
+  if(!email || !inp.checkValidity()){ m.style.color='var(--red)'; m.textContent = 'Isi email dulu.'; return; }
+  const btn = document.querySelector('[data-act="magiclink"]'); btn.disabled = true; btn.textContent = 'Mengirim…';
+  const { error } = await sb.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin + location.pathname, shouldCreateUser:false}});
+  btn.disabled = false; btn.textContent = 'Kirim ulang link';
+  if(error){ m.style.color = 'var(--red)'; m.textContent = /rate|security purposes/i.test(error.message) ? 'Batas kirim email tercapai. Masuk dengan password, atau coba lagi sekitar 1 jam lagi.' : 'Gagal: ' + error.message; }
+  else { m.style.color = ''; m.innerHTML = `Link masuk sudah dikirim ke <b>${esc(email)}</b>. Buka email itu di perangkat ini lalu klik linknya.`; }
+}
+const pwForm = () => `<form data-form="setpw" style="margin-top:14px"><div class="fld"><label>Password baru (min. 8 karakter)</label><input class="f" type="password" name="pw1" autocomplete="new-password" required></div><div class="fld"><label>Ulangi password</label><input class="f" type="password" name="pw2" autocomplete="new-password" required></div><button class="btn">Simpan password</button><small id="pw-msg" style="display:block;margin-top:8px"></small></form>`;
 function showNotMember(){
   showLogin();
   $('#login .lgcard').innerHTML = `<img src="${LOGO}" alt=""><h2>Email belum terdaftar</h2><p class="muted">${esc(myEmail)} belum ada di daftar anggota. Minta pasanganmu menambahkannya, lalu masuk lagi.</p><button class="btn lg" data-act="logout" style="margin-top:10px">Keluar</button>`;
@@ -1079,7 +1092,7 @@ PAGES.pengaturan = {
         <div class="fld"><label>Kategori Link Penting (pisahkan dengan koma)</label><input class="f" name="linkCats" value="${esc((settings.linkCats||[]).join(', '))}"></div>
         <button class="btn">Simpan pengaturan</button></form>
       <div class="stack">
-        ${mode==='sb' ? `<div class="card"><h2>Akun</h2><p class="muted">Masuk sebagai <b>${esc(nameOf(who()))}</b> · ${esc(myEmail)}</p><button class="btn line" data-act="logout">Keluar</button></div>` : `<div class="card"><h2>Profil di perangkat ini</h2><p class="muted">Kamu saat ini: <b>${esc(nameOf(who())||'belum dipilih')}</b></p><div class="row"><button class="btn" data-act="setwho" data-k="a">Saya ${esc(settings.names.a)}</button><button class="btn red" data-act="setwho" data-k="b">Saya ${esc(settings.names.b)}</button></div></div>`}
+        ${mode==='sb' ? `<div class="card"><h2>Akun</h2><p class="muted">Masuk sebagai <b>${esc(nameOf(who()))}</b> · ${esc(myEmail)}</p><button class="btn line" data-act="logout">Keluar</button><div class="lbl" style="margin-top:20px">Password untuk masuk</div>${pwForm()}</div>` : `<div class="card"><h2>Profil di perangkat ini</h2><p class="muted">Kamu saat ini: <b>${esc(nameOf(who())||'belum dipilih')}</b></p><div class="row"><button class="btn" data-act="setwho" data-k="a">Saya ${esc(settings.names.a)}</button><button class="btn red" data-act="setwho" data-k="b">Saya ${esc(settings.names.b)}</button></div></div>`}
         <div class="card lb"><h2>Berbagi dengan pasangan</h2><p style="font-size:15px">${mode==='sb' ? 'Hanya email yang terdaftar di tabel <b>members</b> Supabase yang bisa masuk dan melihat data. Kalian berdua masuk dengan link yang dikirim ke email masing-masing.' : mode==='db' ? 'Data tersimpan online. Bagikan halaman ini ke pasanganmu dari tombol <b>Share</b> di claude.ai dengan akses <b>Contributor</b> atau <b>Editor</b> supaya dia bisa menambah data.' : 'Saat ini mode lokal: data hanya ada di browser ini. Buka lewat link artifact di claude.ai supaya tersinkron.'}</p></div>
         <div class="card"><h2>Cadangan data</h2><p class="muted" style="font-size:15px">Salin semua data sebagai JSON, atau tempel JSON cadangan untuk memulihkan.</p>
           <div class="row wrap"><button class="btn ghost" data-act="export">Salin cadangan JSON</button><button class="btn line" data-act="import">Pulihkan dari JSON</button></div></div>
@@ -1246,7 +1259,8 @@ document.addEventListener('click', async e => {
     case 'setwho': setWho(k); break;
     case 'lang': setLang(k); break;
     case 'cur': setCur(k); break;
-    case 'account': openModal(`<div class="ch"><h2>${esc(nameOf(who()))}</h2><button class="ib" data-act="close">${IC.x}</button></div><p class="muted">${esc(myEmail)}</p><button class="btn line" data-act="logout">Keluar</button>`); break;
+    case 'account': openModal(`<div class="ch"><h2>${esc(nameOf(who()))}</h2><button class="ib" data-act="close">${IC.x}</button></div><p class="muted">${esc(myEmail)}</p><button class="btn line" data-act="logout">Keluar</button><div class="lbl" style="margin-top:20px">Ganti password</div>${pwForm()}`); break;
+    case 'magiclink': sendMagicLink(); break;
     case 'logout': if(sb){ await sb.auth.signOut(); location.replace(location.pathname); } break;
     case 'btab': ui.berandaTab = k; render(); break;
     case 'etab': ui.expTab = k; render(); break;
@@ -1292,11 +1306,18 @@ document.addEventListener('click', async e => {
 });
 document.addEventListener('submit', async e => {
   const f = e.target; const kind = f.dataset.form; if(!kind) return; e.preventDefault();
-  if(kind==='login'){ const email = readForm(f).email.trim().toLowerCase(); const btn = f.querySelector('button'); btn.disabled = true; btn.textContent = 'Mengirim…';
-    const { error } = await sb.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin + location.pathname, shouldCreateUser:true}});
-    const m = $('#lg-msg'); btn.disabled = false; btn.textContent = 'Kirim ulang link';
-    if(error){ m.style.color = 'var(--red)'; m.textContent = error.message.includes('rate') ? 'Terlalu sering. Tunggu sebentar lalu coba lagi.' : 'Gagal: ' + error.message; }
-    else { m.style.color = ''; m.innerHTML = `Link masuk sudah dikirim ke <b>${esc(email)}</b>. Buka email itu di perangkat ini lalu klik linknya.`; }
+  if(kind==='login'){ const v = readForm(f), email = v.email.trim().toLowerCase(), m = $('#lg-msg'), btn = f.querySelector('button.lg');
+    if(!v.password){ sendMagicLink(); return; }
+    btn.disabled = true; btn.textContent = 'Memeriksa…';
+    const { error } = await sb.auth.signInWithPassword({email, password:v.password});
+    btn.disabled = false; btn.textContent = 'Masuk';
+    if(error){ m.style.color = 'var(--red)'; m.textContent = /invalid/i.test(error.message) ? 'Email atau password salah.' : 'Gagal masuk: ' + error.message; }
+    return; }
+  if(kind==='setpw'){ const v = readForm(f); const m = $('#pw-msg');
+    if((v.pw1||'').length < 8){ m.style.color='var(--red)'; m.textContent = 'Password minimal 8 karakter.'; return; }
+    if(v.pw1 !== v.pw2){ m.style.color='var(--red)'; m.textContent = 'Kedua password tidak sama.'; return; }
+    const { error } = await sb.auth.updateUser({password:v.pw1});
+    if(error){ m.style.color='var(--red)'; m.textContent = 'Gagal: ' + error.message; } else { f.reset(); m.style.color=''; m.textContent = 'Password tersimpan. Pakai email + password ini untuk masuk berikutnya.'; toast('Password tersimpan'); }
     return; }
   if(!canWrite){ toast('Mode lihat saja.'); return; }
   if(kind==='generic' && formCfg){ const v = readForm(f); const btn = f.querySelector('[type=submit]'); if(btn) btn.disabled = true; await formCfg.onSave(v); closeModal(); }
@@ -1330,7 +1351,12 @@ const EN_DICT = {
   'data hanya tersimpan di browser ini':'data is stored in this browser only','data tersimpan online dan bisa dibuka berdua':'data is stored online and shared by both of you',
   'Khusus berdua':'Just for the two of us','Email':'Email','Kirim link masuk':'Send sign-in link','Kirim ulang link':'Resend link','Mengirim…':'Sending…',
   'Kami kirim link masuk ke email kamu. Tanpa password.':"We'll email you a sign-in link. No password needed.",
-  'Email belum terdaftar':'Email not registered','Keluar':'Sign out','Akun':'Account',
+  'Email belum terdaftar':'Email not registered','Masuk':'Sign in','Memeriksa…':'Checking…','Kirim link masuk ke email':'Email me a sign-in link',
+  'Belum punya password? Masuk sekali lewat link email, lalu buat password di menu Pengaturan.':"No password yet? Sign in once with an email link, then create a password in Settings.",
+  'Email atau password salah.':'Wrong email or password.','Isi email dulu.':'Enter your email first.','Batas kirim email tercapai. Masuk dengan password, atau coba lagi sekitar 1 jam lagi.':'Email sending limit reached. Sign in with your password, or try again in about an hour.',
+  'Ganti password':'Change password','Password untuk masuk':'Sign-in password','Password baru (min. 8 karakter)':'New password (min. 8 characters)','Ulangi password':'Repeat password','Simpan password':'Save password',
+  'Password minimal 8 karakter.':'Password must be at least 8 characters.','Kedua password tidak sama.':'The passwords do not match.','Password tersimpan':'Password saved',
+  'Password tersimpan. Pakai email + password ini untuk masuk berikutnya.':'Password saved. Use this email + password next time you sign in.','Keluar':'Sign out','Akun':'Account',
   // common
   'Catat':'Add','Simpan':'Save','Batal':'Cancel','Hapus':'Delete','Yakin hapus?':'Delete for sure?','Ubah':'Edit','Tutup':'Close','Kirim':'Send','Atur':'Manage',
   'Tambah':'Add','+ Tambah':'+ Add','Semua':'All','Semua ›':'All ›','Kelola ›':'Manage ›','Bulanan':'Monthly','Tahunan':'Yearly','Sebelumnya':'Previous','Berikutnya':'Next',
