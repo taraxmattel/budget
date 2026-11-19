@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0F2A4A">
+<meta name="apple-mobile-web-app-title" content="Budget TxM">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Budget Tara x Mattel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,6 +58,12 @@ main{min-width:0;background:#fff}
 .ib svg{width:20px;height:20px}
 .ib .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--red)}
 .burger{display:none}
+.mlogo{display:none;width:38px;height:38px;border-radius:50%;flex:none}
+.rrow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) minmax(0,1fr) 92px;gap:6px 14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.rrow .rn b{font-size:15px;cursor:pointer;display:block}.rrow .rn small{display:block;font-size:13px}
+.rrow .rs{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}.rrow .rs small{font-size:13px}
+.rrow .ra{text-align:right}.rrow .ra b{display:block}.rrow .ra small{font-size:12px}
+.rrow .rb{text-align:right}
 .content{padding:24px 32px 64px;max-width:1400px}
 
 /* ui */
@@ -243,7 +255,47 @@ svg.chart text{font-family:"DM Sans";fill:var(--muted);font-size:12px}
   .cal .dc{min-height:64px}.cev{font-size:0;height:6px;padding:0;border-left-width:6px}
   .qcats{padding-right:0;margin-bottom:28px}
 }
-@media (max-width:560px){.g4{grid-template-columns:1fr}}
+@media (max-width:600px){
+  .g4{grid-template-columns:1fr}
+  body{font-size:15px}
+  .top{gap:8px;padding:10px 12px}
+  .top .ttl h1{font-size:17px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top .ttl small{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mlogo{display:block}
+  .ib{width:38px;height:38px}.ib svg{width:18px;height:18px}
+  .top .btn.lg{padding:9px 11px}
+  .content{padding:14px 12px 56px}
+  .card{padding:16px}
+  .grid,.stack{gap:14px}
+  h2{font-size:17px} h3{font-size:16px}
+  .big{font-size:30px}.mid{font-size:20px}
+  .motif{width:60px;height:60px;right:12px;bottom:10px}
+  .card.rel > small,.card.rel > .amt{padding-right:64px}
+  .pagebar{gap:10px!important;margin-bottom:14px!important}
+  .pagebar .sp{display:none}
+  .ptabs{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .tabs button{padding:8px 10px;font-size:14px}
+  .period{width:100%;display:grid;grid-template-columns:auto 1fr;gap:8px}
+  .period .pbox{justify-content:space-between}
+  .period .pbox span{min-width:0;font-size:14px}
+  .ch{flex-wrap:wrap;gap:8px}
+  .ch .btn{padding:8px 12px;font-size:14px}
+  .rrow{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}
+  .rrow .rn{grid-column:1}.rrow .ra{grid-column:2;grid-row:1}
+  .rrow .rs{grid-column:1}.rrow .rb{grid-column:2;grid-row:2}
+  .tbl thead{display:none}
+  .tbl tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .tbl td{border:0;padding:0;font-size:14px}
+  .tbl td:first-child{font-weight:700}
+  .tbl td.num{grid-column:2;grid-row:1/span 4;align-self:center}
+  .tbl td:not(.num):not(:first-child){color:var(--muted);font-size:13px}
+  .tbl tfoot td{font-weight:700}
+  .brow{grid-template-columns:96px 1fr 64px;font-size:14px}
+  .li{padding:10px}
+  .qtext{font-size:20px}.qcard{padding:18px}
+  .md{padding:18px}
+  .kb{grid-template-columns:repeat(4,minmax(240px,82vw))}
+}
 </style>
 </head>
 <body>
@@ -393,7 +445,7 @@ const lsGet = k => { try { return localStorage.getItem(k); } catch { return null
 const lsSet = (k,v) => { try { localStorage.setItem(k,v); } catch {} };
 
 const ui = {
-  page: 'beranda', berandaTab: 'bisnis', expTab: 'rutin',
+  page: 'beranda', berandaTab: 'household', expTab: 'rutin',
   period: { mode:'bulan', y:new Date().getFullYear(), m:new Date().getMonth()+1 },
   cal: { y:new Date().getFullYear(), m:new Date().getMonth()+1, sel:todayStr(), filter:'all' },
   qCat: 'Relationship', qIdx: 0, todoFilter:'aktif', linkQ:'', pop:null,
@@ -663,12 +715,15 @@ function renderSide(){
   ${items.map(it => it[0]==='sec' ? `<div class="navsec">${it[1]}</div>` : `<a class="nav ${ui.page===it[0]?'on':''}" href="#${it[0]}">${it[2]}<span>${it[1]}</span>${it[3]?`<span class="cnt">${it[3]}</span>`:''}</a>`).join('')}
   <button class="me" data-act="${mode==='sb'?'account':'whoami'}">${w?avatar(w,''):`<span class="av" style="background:var(--ocean)">?</span>`}<span><b style="display:block">${w?esc(nameOf(w)):'Pilih profil'}</b><small style="color:rgba(255,255,255,.75)">${esc(settings.names.a)} &amp; ${esc(settings.names.b)}</small></span></button>`;
 }
+const isNarrow = () => window.innerWidth < 600;
+let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(schedule, 150); });
 function greet(){ const h = new Date().getHours(); return h<11?'Selamat pagi':h<15?'Selamat siang':h<18?'Selamat sore':'Selamat malam'; }
 function renderTop(){
   const P = PAGES[ui.page] || PAGES.beranda;
   const [title, sub] = P.title();
   const nCount = notifications().length;
   return `<button class="ib burger" data-act="burger" aria-label="Menu">${IC.menu}</button>
+  <img class="mlogo" src="${LOGO}" alt="Tara x Mattel">
   <div class="ttl"><h1>${title}</h1><small>${sub}</small></div>
   <button class="ib hide-m" data-act="hideamt" title="Sembunyikan nominal">${IC.eye}</button>
   <div style="position:relative"><button class="ib" data-act="pop" data-k="notif" title="Notifikasi">${IC.bell}${nCount?'<span class="dot"></span>':''}</button>${ui.pop==='notif'?renderNotif():''}</div>
@@ -723,9 +778,9 @@ const PAGES = {};
 
 /* ---- Beranda ---- */
 PAGES.beranda = {
-  title: () => [`${greet()}, ${esc(settings.names.a)} & ${esc(settings.names.b)}`, fmtDateLong(todayStr())],
+  title: () => [isNarrow() ? `Halo, ${esc(settings.names.a)} & ${esc(settings.names.b)}` : `${greet()}, ${esc(settings.names.a)} & ${esc(settings.names.b)}`, isNarrow() ? `${greet()} · ${fmtDate(todayStr())}` : fmtDateLong(todayStr())],
   render(){
-    return `<div class="row wrap" style="margin-bottom:20px;gap:14px"><div class="tabs"><button class="${ui.berandaTab==='bisnis'?'on':''}" data-act="btab" data-k="bisnis">Beranda Bisnis</button><button class="${ui.berandaTab==='household'?'on':''}" data-act="btab" data-k="household">Beranda Household</button></div><span class="sp"></span>${periodBar()}</div>
+    return `<div class="row wrap pagebar" style="margin-bottom:20px;gap:14px"><div class="tabs ptabs"><button class="${ui.berandaTab==='household'?'on':''}" data-act="btab" data-k="household">Household</button><button class="${ui.berandaTab==='bisnis'?'on':''}" data-act="btab" data-k="bisnis">Bisnis</button></div><span class="sp"></span>${periodBar()}</div>
     ${ui.berandaTab==='bisnis' ? renderBisnis() : renderHousehold()}`;
   }
 };
@@ -820,7 +875,7 @@ PAGES.pengeluaran = {
   render(){
     const exp = S.expenses.filter(e=>inPeriod(e.date));
     const rut = exp.filter(e=>e.type!=='misc'), misc = exp.filter(e=>e.type==='misc');
-    return `<div class="row wrap" style="margin-bottom:20px;gap:14px"><div class="tabs"><button class="${ui.expTab==='rutin'?'on':''}" data-act="etab" data-k="rutin">Transaksi Rutin</button><button class="${ui.expTab==='misc'?'on':''}" data-act="etab" data-k="misc">Miscellaneous</button></div><span class="sp"></span>${periodBar()}</div>
+    return `<div class="row wrap pagebar" style="margin-bottom:20px;gap:14px"><div class="tabs ptabs"><button class="${ui.expTab==='rutin'?'on':''}" data-act="etab" data-k="rutin">Transaksi Rutin</button><button class="${ui.expTab==='misc'?'on':''}" data-act="etab" data-k="misc">Miscellaneous</button></div><span class="sp"></span>${periodBar()}</div>
     <div class="grid g3" style="margin-bottom:20px">
       <div class="card ocean"><div class="lbl">Total pengeluaran · ${periodLabel()}</div><div class="mid amt mono" style="margin-top:6px">${fmtIDR(sumBy(exp,'idr'))}</div><small class="amt">${fmtUSD(sumBy(exp,'usd'))}</small></div>
       <div class="card lb"><div class="lbl">Rutin</div><div class="mid amt mono" style="margin-top:6px">${fmtIDR(sumBy(rut,'idr'))}</div><small class="amt">${fmtUSD(sumBy(rut,'usd'))} · ${rut.length} transaksi</small></div>
@@ -833,13 +888,13 @@ function renderRutin(rut){
   const p = ui.period; const ym = p.mode==='bulan' ? `${p.y}-${pad(p.m)}` : curYM();
   const groups = ROUTINE_GROUPS.map(g => [g, itemsSorted().filter(i=>i.group===g)]).filter(g=>g[1].length);
   const [yy, mm] = ym.split('-').map(Number);
-  return `<div class="card" style="margin-bottom:20px"><div class="ch"><h2>Pos rutin &amp; tagihan</h2><small>Status bayar: ${BULAN[mm-1]} ${yy}</small><button class="btn line" data-act="item">${IC.plus}Pos baru</button></div>
-    ${groups.length ? groups.map(([g, items]) => `<div class="lbl" style="margin:16px 0 8px">${esc(g)}</div><div class="tbl"><table><tbody>${items.map(i => {
+  return `<div class="card" style="margin-bottom:20px"><div class="ch"><h2>Pos rutin &amp; tagihan</h2><button class="btn line" data-act="item">${IC.plus}Pos baru</button></div><small style="display:block;margin:-8px 0 4px">Status bayar: ${BULAN[mm-1]} ${yy}</small>
+    ${groups.length ? groups.map(([g, items]) => `<div class="lbl" style="margin:16px 0 4px">${esc(g)}</div>${items.map(i => {
       const spent = rut.filter(e=>e.itemId===i.id); const paid = i.reminder ? isPaid(i, ym) : null; const due = i.dueDay ? dueDateFor(i, yy, mm) : null; const n = due ? daysTo(due) : null;
-      return `<tr><td style="width:34%"><b class="hd" style="font-size:15px;cursor:pointer" data-act="item" data-id="${i.id}">${esc(i.name)}</b>${i.defAmount?`<small style="display:block">Biasanya ${i.currency==='USD'?fmtUSD(i.defAmount):fmtIDR(i.defAmount)}</small>`:''}</td>
-      <td>${i.reminder && i.dueDay ? `<small>Jatuh tempo tgl ${i.dueDay}</small><br>${paid?'<span class="pill ok">Lunas</span>':`<span class="pill ${n<0?'red':n<=3?'ocean':''}">${relDay(n)}</span>`}` : '<small>Tanpa reminder</small>'}</td>
-      <td class="num"><span class="amt mono"><b>${fmtIDR(sumBy(spent,'idr'))}</b><small>${spent.length} transaksi</small></span></td>
-      <td class="num" style="width:90px"><button class="btn sm ${paid===false?'':'ghost'}" data-act="pay" data-id="${i.id}" ${due?`data-due="${due}"`:''}>${i.reminder?'Bayar':'Catat'}</button></td></tr>`; }).join('')}</tbody></table></div>`).join('')
+      return `<div class="rrow"><div class="rn"><b class="hd" data-act="item" data-id="${i.id}">${esc(i.name)}</b>${i.defAmount?`<small>Biasanya ${i.currency==='USD'?fmtUSD(i.defAmount):fmtIDR(i.defAmount)}</small>`:''}</div>
+      <div class="rs">${i.reminder && i.dueDay ? `<small>Jatuh tempo tgl ${i.dueDay}</small> ${paid?'<span class="pill ok">Lunas</span>':`<span class="pill ${n<0?'red':n<=3?'ocean':''}">${relDay(n)}</span>`}` : '<small>Tanpa reminder</small>'}</div>
+      <div class="ra amt mono"><b>${fmtIDR(sumBy(spent,'idr'))}</b><small>${spent.length} transaksi</small></div>
+      <div class="rb"><button class="btn sm ${paid===false?'':'ghost'}" data-act="pay" data-id="${i.id}" ${due?`data-due="${due}"`:''}>${i.reminder?'Bayar':'Catat'}</button></div></div>`; }).join('')}`).join('')
     : `<div class="empty">Belum ada pos rutin.<br><br><button class="btn" data-act="seedroutine">Isi daftar bawaan (${DEFAULT_ROUTINE.length} pos)</button></div>`}
   </div>
   <div class="card"><div class="ch"><h2>Riwayat transaksi rutin · ${periodLabel()}</h2><button class="btn" data-act="quick" data-k="expense-rutin">${IC.plus}Catat</button></div>
@@ -1150,7 +1205,7 @@ window.addEventListener('hashchange', route);
 function route(){ const h = location.hash.slice(1); ui.page = PAGES[h] ? h : 'beranda'; ui.pop = null; document.body.classList.remove('navopen'); render(); window.scrollTo(0,0); }
 document.addEventListener('click', async e => {
   if(ui.pop && !e.target.closest('.pop') && !e.target.closest('[data-act="pop"]')){ ui.pop = null; render(); }
-  const navA = e.target.closest('a.nav'); if(navA){ document.body.classList.remove('navopen'); return; }
+  const navA = e.target.closest('a.nav'); if(navA){ document.body.classList.remove('navopen'); if(navA.getAttribute('href')==='#beranda'){ ui.berandaTab = 'household'; if(ui.page==='beranda') render(); } return; }
   const el = e.target.closest('[data-act]'); if(!el) return;
   const act = el.dataset.act, k = el.dataset.k, id = el.dataset.id;
   if(act==='ovclose' && e.target !== el) return;
