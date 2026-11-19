@@ -7,7 +7,7 @@ Aplikasi pribadi Tara & Mattel: beranda bisnis (kanban + income), beranda househ
 - **Frontend:** satu halaman statis di `public/` (tanpa build step)
 - **Data & login:** Supabase Free (organisasi "Tara x Mattel", project `budget-taraxmattel`)
   — tabel `docs` + `members`, Row Level Security, realtime, login lewat link email
-- **Hosting:** Cloudflare Workers static assets (gratis) → `budget-taraxmattel.<akun>.workers.dev`
+- **Hosting:** Cloudflare Workers static assets (gratis) → `budget.taraxmattel.workers.dev`
 
 ## Struktur
 
@@ -36,7 +36,7 @@ insert into public.members (email, who) values
 ## Pengaturan Supabase Auth (sekali saja)
 
 Authentication → URL Configuration:
-- **Site URL:** alamat aplikasi di Cloudflare, mis. `https://budget-taraxmattel.<akun>.workers.dev`
+- **Site URL:** alamat aplikasi di Cloudflare, mis. `https://budget.taraxmattel.workers.dev`
 - **Redirect URLs:** alamat yang sama + `/**`
 
 ## Deploy ke Cloudflare
