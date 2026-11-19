@@ -58,6 +58,11 @@ main{min-width:0;background:#fff}
 .ib svg{width:20px;height:20px}
 .ib .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--red)}
 .burger{display:none}
+.seg{display:inline-flex;background:var(--lb);border-radius:99px;padding:3px;gap:2px;flex:none}
+.seg button{border:0;background:none;border-radius:99px;padding:5px 10px;font:700 13px "Plus Jakarta Sans",system-ui,sans-serif;color:var(--navy)}
+.seg button.on{background:var(--navy);color:#fff}
+.side .seg{background:rgba(255,255,255,.12)}.side .seg button{color:#fff}.side .seg button.on{background:#fff;color:var(--navy)}
+.sidetg{display:flex;gap:8px;padding:12px 4px 4px;flex-wrap:wrap}
 .mlogo{display:none;width:38px;height:38px;border-radius:50%;flex:none}
 .rrow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) minmax(0,1fr) 92px;gap:6px 14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
 .rrow .rn b{font-size:15px;cursor:pointer;display:block}.rrow .rn small{display:block;font-size:13px}
@@ -362,19 +367,35 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8
 const ds = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const todayStr = () => ds(new Date());
 const pd = s => { const [y,m,d] = String(s).split('-').map(Number); return new Date(y,(m||1)-1,d||1); };
-const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-const BLN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-const fmtIDR = n => 'Rp ' + Math.round(n||0).toLocaleString('id-ID');
-const fmtUSD = n => '$' + (n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtShort = n => { n = n||0; const a = Math.abs(n), s = n<0?'−':''; if(a>=1e9) return s+(a/1e9).toFixed(1).replace('.',',')+' M'; if(a>=1e6) return s+(a/1e6).toFixed(1).replace('.',',')+' jt'; if(a>=1e3) return s+Math.round(a/1e3)+' rb'; return s+Math.round(a); };
+const L10N = {
+  id:{BULAN:['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'], BLN:['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'], HARI:['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']},
+  en:{BULAN:['January','February','March','April','May','June','July','August','September','October','November','December'], BLN:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], HARI:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']}
+};
+let LANG = (() => { try { return localStorage.getItem('txm-lang') === 'en' ? 'en' : 'id'; } catch { return 'id'; } })();
+let CUR  = (() => { try { return localStorage.getItem('txm-cur') === 'USD' ? 'USD' : 'IDR'; } catch { return 'IDR'; } })();
+let BULAN = L10N[LANG].BULAN, BLN = L10N[LANG].BLN, HARI = L10N[LANG].HARI;
+const EN = () => LANG === 'en';
+const rateNow = () => +settings?.usdRate || 16500;
+const idrStr = n => 'Rp ' + Math.round(n||0).toLocaleString('id-ID');
+const usdStr = n => '$' + (n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+// Tampilan mengikuti toggle mata uang. Nominal utama (fmtIDR) & sekunder (fmtUSD) saling bertukar saat mode $.
+const fmtIDR = n => CUR === 'USD' ? usdStr((n||0) / rateNow()) : idrStr(n);
+const fmtUSD = n => CUR === 'USD' ? idrStr((n||0) * rateNow()) : usdStr(n);
+const fmtShort = n => {
+  n = n||0; let sym = '';
+  if(CUR === 'USD'){ n = n / rateNow(); sym = '$'; }
+  const a = Math.abs(n), s = n<0?'−':'', dec = v => EN() || CUR==='USD' ? v.toFixed(1) : v.toFixed(1).replace('.',',');
+  const U = EN() || CUR==='USD' ? ['B','M','K'] : [' M',' jt',' rb'];
+  if(a>=1e9) return s+sym+dec(a/1e9)+U[0]; if(a>=1e6) return s+sym+dec(a/1e6)+U[1]; if(a>=1e3) return s+sym+Math.round(a/1e3)+U[2];
+  return s+sym+(CUR==='USD' ? a.toFixed(a<10?2:0) : Math.round(a));
+};
 const fmtDate = s => { if(!s) return ''; const d = pd(s); return `${d.getDate()} ${BLN[d.getMonth()]} ${d.getFullYear()}`; };
 const fmtDateLong = s => { const d = pd(s); return `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`; };
 const daysTo = s => Math.round((pd(s) - pd(todayStr())) / 864e5);
-const relDay = n => n===0 ? 'Hari ini' : n===1 ? 'Besok' : n>1 ? `${n} hari lagi` : `Lewat ${-n} hari`;
+const relDay = n => EN() ? (n===0 ? 'Today' : n===1 ? 'Tomorrow' : n>1 ? `In ${n} days` : `${-n} day${n===-1?'':'s'} overdue`) : (n===0 ? 'Hari ini' : n===1 ? 'Besok' : n>1 ? `${n} hari lagi` : `Lewat ${-n} hari`);
 const sumBy = (arr,k) => arr.reduce((a,b)=>a+(+b[k]||0),0);
 const money = (idr,usd,cls='') => `<span class="amt mono ${cls}">${fmtIDR(idr)}</span>`;
-const moneyCell = e => `<span class="amt mono"><b>${fmtIDR(e.idr)}</b><small>${fmtUSD(e.usd)}${e.currency==='USD'?' · input USD':''}</small></span>`;
+const moneyCell = e => CUR==='USD' ? `<span class="amt mono"><b>${usdStr(e.usd)}</b><small>${idrStr(e.idr)}${e.currency==='IDR'&&e.rate?' · input Rp':''}</small></span>` : `<span class="amt mono"><b>${idrStr(e.idr)}</b><small>${usdStr(e.usd)}${e.currency==='USD'?' · input USD':''}</small></span>`;
 let toastT; const toast = m => { clearTimeout(toastT); let t = $('.toast'); if(!t){ t=document.createElement('div'); t.className='toast'; document.body.appendChild(t);} t.textContent=m; toastT=setTimeout(()=>t.remove(),2600); };
 
 /* ============ Config / defaults ============ */
@@ -385,7 +406,7 @@ const DEFAULT_SETTINGS = {
   linkCats:['Keuangan','Rumah','Sekolah','Kesehatan','Bisnis','Dokumen'],
   whoMap:{}
 };
-const ROUTINE_GROUPS = ['Kebutuhan Harian','Iuran & Cicilan','Kartu Kredit & PayLater','Langganan','Lainnya'];
+const ROUTINE_GROUPS = ['Kebutuhan Harian','Kebutuhan Mingguan','Kebutuhan Bulanan','Iuran & Cicilan','Kartu Kredit & PayLater','Langganan','Lainnya'];
 const DEFAULT_ROUTINE = [
   ['Alfagift / Indomaret','Kebutuhan Harian'],['Food','Kebutuhan Harian'],['Groceries','Kebutuhan Harian'],['Bensin','Kebutuhan Harian'],['Internet','Kebutuhan Harian',20,true],['Orang Tua','Kebutuhan Harian'],['Sekolah','Kebutuhan Harian',10,true],
   ['Iuran Air','Iuran & Cicilan',20,true],['Iuran Sampah','Iuran & Cicilan',10,true],['Iuran RT','Iuran & Cicilan',10,true],['Cicilan Rumah','Iuran & Cicilan',5,true],
@@ -617,7 +638,7 @@ async function setWho(k){
 
 /* ============ Domain calcs ============ */
 function inPeriod(s, p=ui.period){ if(!s) return false; return p.mode==='bulan' ? s.startsWith(`${p.y}-${pad(p.m)}`) : s.startsWith(`${p.y}`); }
-const periodLabel = (p=ui.period) => p.mode==='bulan' ? `${BULAN[p.m-1]} ${p.y}` : `Tahun ${p.y}`;
+const periodLabel = (p=ui.period) => p.mode==='bulan' ? `${BULAN[p.m-1]} ${p.y}` : `${EN()?'Year':'Tahun'} ${p.y}`;
 const curYM = () => todayStr().slice(0,7);
 function monthsBack(n, endY, endM){ const out=[]; for(let i=n-1;i>=0;i--){ const d=new Date(endY, endM-1-i, 1); out.push({y:d.getFullYear(), m:d.getMonth()+1, key:`${d.getFullYear()}-${pad(d.getMonth()+1)}`}); } return out; }
 const monthSum = (arr, key, k='idr') => sumBy(arr.filter(e => (e.date||'').startsWith(key)), k);
@@ -713,11 +734,15 @@ function renderSide(){
   const w = who();
   return `<div class="brand"><img src="${LOGO}" alt="Tara x Mattel"><div><div class="t">Tara <span>x</span> Mattel</div><div class="s">Budget berdua</div></div></div>
   ${items.map(it => it[0]==='sec' ? `<div class="navsec">${it[1]}</div>` : `<a class="nav ${ui.page===it[0]?'on':''}" href="#${it[0]}">${it[2]}<span>${it[1]}</span>${it[3]?`<span class="cnt">${it[3]}</span>`:''}</a>`).join('')}
+  <div class="sidetg">${toggles()}</div>
   <button class="me" data-act="${mode==='sb'?'account':'whoami'}">${w?avatar(w,''):`<span class="av" style="background:var(--ocean)">?</span>`}<span><b style="display:block">${w?esc(nameOf(w)):'Pilih profil'}</b><small style="color:rgba(255,255,255,.75)">${esc(settings.names.a)} &amp; ${esc(settings.names.b)}</small></span></button>`;
 }
 const isNarrow = () => window.innerWidth < 600;
+const toggles = () => `<span class="seg" role="group" aria-label="Bahasa"><button class="${LANG==='id'?'on':''}" data-act="lang" data-k="id">ID</button><button class="${LANG==='en'?'on':''}" data-act="lang" data-k="en">EN</button></span> <span class="seg" role="group" aria-label="Mata uang"><button class="${CUR==='IDR'?'on':''}" data-act="cur" data-k="IDR">Rp</button><button class="${CUR==='USD'?'on':''}" data-act="cur" data-k="USD">$</button></span>`;
+function setLang(l){ LANG = l === 'en' ? 'en' : 'id'; BULAN = L10N[LANG].BULAN; BLN = L10N[LANG].BLN; HARI = L10N[LANG].HARI; document.documentElement.lang = LANG; try { localStorage.setItem('txm-lang', LANG); } catch {} render(); }
+function setCur(c){ CUR = c === 'USD' ? 'USD' : 'IDR'; try { localStorage.setItem('txm-cur', CUR); } catch {} render(); }
 let rzT; window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(schedule, 150); });
-function greet(){ const h = new Date().getHours(); return h<11?'Selamat pagi':h<15?'Selamat siang':h<18?'Selamat sore':'Selamat malam'; }
+function greet(){ const h = new Date().getHours(); return EN() ? (h<11?'Good morning':h<15?'Good afternoon':h<18?'Good afternoon':'Good evening') : (h<11?'Selamat pagi':h<15?'Selamat siang':h<18?'Selamat sore':'Selamat malam'); }
 function renderTop(){
   const P = PAGES[ui.page] || PAGES.beranda;
   const [title, sub] = P.title();
@@ -725,6 +750,7 @@ function renderTop(){
   return `<button class="ib burger" data-act="burger" aria-label="Menu">${IC.menu}</button>
   <img class="mlogo" src="${LOGO}" alt="Tara x Mattel">
   <div class="ttl"><h1>${title}</h1><small>${sub}</small></div>
+  <span class="hide-m">${toggles()}</span>
   <button class="ib hide-m" data-act="hideamt" title="Sembunyikan nominal">${IC.eye}</button>
   <div style="position:relative"><button class="ib" data-act="pop" data-k="notif" title="Notifikasi">${IC.bell}${nCount?'<span class="dot"></span>':''}</button>${ui.pop==='notif'?renderNotif():''}</div>
   <button class="btn lg" data-act="drawer">${IC.plus}<span class="hide-m">Catat</span></button>`;
@@ -850,8 +876,8 @@ function renderHousehold(){
         <div class="card lb" style="cursor:pointer" data-act="go" data-k="pengeluaran"><div class="lbl">Total expense</div><div class="mid amt mono" style="margin-top:6px">${fmtIDR(expT)}</div><small class="amt">Rutin ${fmtShort(sumBy(exp.filter(e=>e.type!=='misc'),'idr'))} · Lain ${fmtShort(sumBy(exp.filter(e=>e.type==='misc'),'idr'))}</small></div>
         <div class="card lb" style="cursor:pointer" data-act="go" data-k="tabungan"><div class="lbl">Total tabungan saat ini</div><div class="mid amt mono" style="margin-top:6px">${fmtIDR(st.all)}</div><small class="amt">Setoran periode ini ${fmtShort(sumBy(setor,'idr'))}</small></div>
       </div>
-      <div class="card"><div class="ch"><h3>Arus kas 6 bulan</h3>${legend([{name:'Salary',color:'#1A6AAE'},{name:'Expense',color:'#0F2A4A'}])}</div>
-        ${barChart(ms.map(x=>BLN[x.m-1]), [{name:'Salary',color:'#1A6AAE',values:ms.map(x=>monthSum(S.salary,x.key))},{name:'Expense',color:'#0F2A4A',values:ms.map(x=>monthSum(S.expenses,x.key))}])}
+      <div class="card"><div class="ch"><h3>Arus kas 6 bulan</h3>${legend([{name:'Salary',color:'#1A6AAE'},{name:'Expense',color:'#D62839'}])}</div>
+        ${barChart(ms.map(x=>BLN[x.m-1]), [{name:'Salary',color:'#1A6AAE',values:ms.map(x=>monthSum(S.salary,x.key))},{name:'Expense',color:'#D62839',values:ms.map(x=>monthSum(S.expenses,x.key))}])}
         <div class="lbl" style="margin:18px 0 6px">Pengeluaran terbesar · ${periodLabel()}</div>
         ${top.length ? top.map(([k,v],i)=>`<div class="brow"><span>${esc(k)}</span><div class="bar"><i class="${i===0?'':'navy'}" style="width:${v/maxC*100}%;${i>0?'opacity:.35':''}"></i></div><span class="num amt mono">${fmtShort(v)}</span></div>`).join('') : '<div class="empty">Belum ada pengeluaran.</div>'}
       </div>
@@ -947,7 +973,7 @@ PAGES.kalender = {
     return `<div class="grid main-side"><div class="card">
       <div class="row wrap" style="margin-bottom:14px"><button class="ib" data-act="calstep" data-k="-1">${IC.left}</button><h2 style="min-width:190px;text-align:center">${BULAN[c.m-1]} ${c.y}</h2><button class="ib" data-act="calstep" data-k="1">${IC.right}</button><button class="btn ghost sm" data-act="caltoday">Hari ini</button><span class="sp"></span><button class="btn" data-act="event">${IC.plus}Tambah kegiatan</button></div>
       <div class="row wrap" style="margin-bottom:14px;gap:8px">${chips.map(ch=>`<button class="chip ${c.filter===ch[0]?'on':''}" data-act="calfilter" data-k="${ch[0]}">${ch[2]?`<span class="dotc" style="background:${ch[2]}"></span>`:''}${ch[1]}</button>`).join('')}</div>
-      <div class="cal">${['SEN','SEL','RAB','KAM','JUM','SAB','MIN'].map(d=>`<div class="dh">${d}</div>`).join('')}
+      <div class="cal">${(EN()?['MON','TUE','WED','THU','FRI','SAT','SUN']:['SEN','SEL','RAB','KAM','JUM','SAB','MIN']).map(d=>`<div class="dh">${d}</div>`).join('')}
       ${cells.map(d => { const k = ds(d), its = items.filter(i=>i.date===k); return `<div class="dc ${d.getMonth()!==c.m-1?'out':''} ${k===t?'today':''} ${k===c.sel?'sel':''} ${d.getDay()===0?'sun':''}" data-act="calsel" data-k="${k}"><span class="dn">${d.getDate()}</span>${its.slice(0,3).map(i=>`<span class="cev" style="border-left-color:${i.color};${i.done?'opacity:.5;text-decoration:line-through':''}">${esc(i.title)}</span>`).join('')}${its.length>3?`<small style="font-size:11px">+${its.length-3} lagi</small>`:''}</div>`; }).join('')}</div>
     </div>
     <div class="stack"><div class="card"><div class="lbl">Hari terpilih${c.sel===t?' · hari ini':''}</div><h2 style="margin:4px 0 14px">${fmtDateLong(c.sel)}</h2>
@@ -1218,6 +1244,8 @@ document.addEventListener('click', async e => {
     case 'go': ui.pop = null; location.hash = k; break;
     case 'whoami': openModal(`<div class="ch"><h2>Kamu siapa?</h2><button class="ib" data-act="close">${IC.x}</button></div><div class="row" style="gap:14px"><button class="btn lg" data-act="setwho" data-k="a">${esc(settings.names.a)}</button><button class="btn lg red" data-act="setwho" data-k="b">${esc(settings.names.b)}</button></div>`); break;
     case 'setwho': setWho(k); break;
+    case 'lang': setLang(k); break;
+    case 'cur': setCur(k); break;
     case 'account': openModal(`<div class="ch"><h2>${esc(nameOf(who()))}</h2><button class="ib" data-act="close">${IC.x}</button></div><p class="muted">${esc(myEmail)}</p><button class="btn line" data-act="logout">Keluar</button>`); break;
     case 'logout': if(sb){ await sb.auth.signOut(); location.replace(location.pathname); } break;
     case 'btab': ui.berandaTab = k; render(); break;
@@ -1286,6 +1314,220 @@ document.addEventListener('dragstart', e => { const c = e.target.closest?.('[dat
 document.addEventListener('dragover', e => { const col = e.target.closest?.('[data-drop]'); if(col && dragId){ e.preventDefault(); document.querySelectorAll('.kcol.over').forEach(x=>x!==col&&x.classList.remove('over')); col.classList.add('over'); } });
 document.addEventListener('dragend', () => { dragId = null; document.querySelectorAll('.kcol.over').forEach(x=>x.classList.remove('over')); });
 document.addEventListener('drop', async e => { const col = e.target.closest?.('[data-drop]'); if(col && dragId){ e.preventDefault(); const p = S.projects.find(x=>x.id===dragId); const st = col.dataset.drop; dragId = null; col.classList.remove('over'); if(p && p.status!==st){ if(!canWrite){ toast('Mode lihat saja.'); return; } await save('projects', {...p, status:st}); } } });
+
+/* ============ English UI (ID → EN) ============ */
+const EN_DICT = {
+  // navigation & pages
+  'Beranda':'Home','Keuangan Rumah':'Home finances','Pengeluaran Bulanan':'Monthly expenses','Tabungan & Pocket':'Savings & pockets',
+  'Rumah & Catatan':'Home & notes','Kalender Kegiatan':'Activity calendar','To-do Household':'Household to-do','Link Penting':'Important links',
+  'Kita':'Us','Berdua':'Together','Pengaturan':'Settings','Budget berdua':'Budget for two','Pilih profil':'Choose profile','Menu':'Menu',
+  'Transaksi rutin, tagihan & lain-lain':'Routine transactions, bills & more','Total saving dan alokasi per tujuan':'Total savings and allocation per goal',
+  'Ulang tahun, anniversary, les, piknik & servis':'Birthdays, anniversaries, classes, picnics & servicing','Daftar tugas rumah berdua':'Shared household tasks',
+  'Dokumen, akun & tautan yang sering dipakai':'Frequently used documents, accounts & links','Merawat kita, pelan-pelan tapi sampai':'Caring for us, slowly but surely',
+  'Nama, kurs, sumber dana & cadangan data':'Names, exchange rate, funding sources & backup',
+  // banner / login
+  'Tersinkron':'Synced','Mode lokal':'Local mode','Mode lihat saja':'View-only mode','Memuat data…':'Loading data…',
+  'data hanya tersimpan di browser ini':'data is stored in this browser only','data tersimpan online dan bisa dibuka berdua':'data is stored online and shared by both of you',
+  'Khusus berdua':'Just for the two of us','Email':'Email','Kirim link masuk':'Send sign-in link','Kirim ulang link':'Resend link','Mengirim…':'Sending…',
+  'Kami kirim link masuk ke email kamu. Tanpa password.':"We'll email you a sign-in link. No password needed.",
+  'Email belum terdaftar':'Email not registered','Keluar':'Sign out','Akun':'Account',
+  // common
+  'Catat':'Add','Simpan':'Save','Batal':'Cancel','Hapus':'Delete','Yakin hapus?':'Delete for sure?','Ubah':'Edit','Tutup':'Close','Kirim':'Send','Atur':'Manage',
+  'Tambah':'Add','+ Tambah':'+ Add','Semua':'All','Semua ›':'All ›','Kelola ›':'Manage ›','Bulanan':'Monthly','Tahunan':'Yearly','Sebelumnya':'Previous','Berikutnya':'Next',
+  'Total':'Total','Tanggal':'Date','Sumber dana':'Funding source','Keterangan':'Notes','Keterangan / remark':'Notes / remark','Jumlah':'Amount','Jumlah (IDR / USD)':'Amount (IDR / USD)',
+  'Pos':'Item','Pocket':'Pocket','Umum':'General','Opsional':'Optional','Pilih atau ketik':'Pick or type','Notifikasi':'Notifications','Sembunyikan nominal':'Hide amounts',
+  'Belum ada data di periode ini.':'No data for this period yet.','Tersimpan':'Saved','Dihapus':'Deleted','Hari ini':'Today','Besok':'Tomorrow',
+  'Semua aman. Tidak ada yang mendesak.':'All good. Nothing urgent.','Kurs USD→IDR':'USD→IDR rate',
+  'Kolom ketiga: kurs USD→IDR. Total tersimpan dalam IDR dan USD.':'Third field: USD→IDR rate. Totals are stored in both IDR and USD.',
+  'Bahasa':'Language','Mata uang':'Currency',
+  // beranda
+  'Household':'Household','Bisnis':'Business','Beranda Household':'Household home','Beranda Bisnis':'Business home',
+  'Saving dari salary':'Savings from salary','Salary masuk':'Salary received','Total expense':'Total expenses','Total tabungan saat ini':'Current total savings',
+  'Arus kas 6 bulan':'6-month cash flow','Salary':'Salary','Expense':'Expenses','Income':'Income','− Expense':'− Expenses',
+  'Akan jatuh tempo':'Coming due','Bayar':'Pay','Tidak ada tagihan yang menunggu. 🎉':'No bills waiting. 🎉','Pocket saving':'Savings pockets','Belum ada pocket.':'No pockets yet.',
+  'Pengeluaran terbesar':'Biggest expenses','Belum ada pengeluaran.':'No expenses yet.','Lain-lain':'Miscellaneous',
+  'Salary & pemasukan rumah':'Salary & household income','Catat salary':'Add salary','Income bisnis':'Business income','Catat income':'Add income',
+  'Deadline terdekat':'Upcoming deadlines','Belum ada deadline.':'No deadlines yet.','Per sumber dana':'By funding source','Belum ada income periode ini.':'No income this period yet.',
+  'Project kanban':'Project kanban','Project baru':'New project','To Do':'To do','Dikerjakan':'In progress','Review':'Review','Selesai':'Done',
+  'Seret kartu antar kolom untuk ganti status, atau klik kartu untuk detail & komentar.':'Drag cards between columns to change status, or click a card for details & comments.',
+  // pengeluaran
+  'Transaksi Rutin':'Routine','Miscellaneous':'Miscellaneous','Total pengeluaran':'Total expenses','Rutin':'Routine',
+  'Pos rutin & tagihan':'Routine items & bills','Pos baru':'New item','Tanpa reminder':'No reminder','Lunas':'Paid',
+  'Riwayat transaksi rutin':'Routine transaction history','Transaksi miscellaneous':'Miscellaneous transactions','Belum ada pos rutin.':'No routine items yet.',
+  'Kebutuhan Harian':'Daily needs','Kebutuhan Mingguan':'Weekly needs','Kebutuhan Bulanan':'Monthly needs','Iuran & Cicilan':'Dues & installments',
+  'Kartu Kredit & PayLater':'Credit cards & PayLater','Langganan':'Subscriptions','Lainnya':'Other',
+  // tabungan
+  'Total saving saat ini':'Current total savings','Pocket baru':'New pocket','Belum dialokasikan':'Unallocated','Setor ke pocket':'Deposit to pocket','Setor tabungan':'Add savings',
+  'Riwayat setoran':'Deposit history','Cara kerja':'How it works','Setoran ke':'Deposits to','saving umum':'general savings','persentase':'percentage','nominal tetap':'fixed amount',
+  'otomatis dibagi ke tiap pocket: pakai':'are split automatically into each pocket: use a',
+  '(ikut naik-turun dengan total saving) atau':'(moves with your total savings) or a',
+  '(jumlah pasti yang disisihkan). Setoran langsung ke pocket menambah saldo pocket itu saja. Isi angka minus untuk mencatat penarikan.':'(an exact amount set aside). Direct deposits to a pocket add to that pocket only. Enter a negative amount to record a withdrawal.',
+  'Alokasi melebihi saving umum':'Allocation exceeds general savings','Alokasi otomatis dari saving umum':'Automatically allocated from general savings',
+  // kalender
+  'Hari ini':'Today','Tambah kegiatan':'Add activity','+ Tambah kegiatan di tanggal ini':'+ Add an activity on this date','Hari terpilih':'Selected day','hari ini':'today',
+  'Tidak ada kegiatan.':'No activities.','Belum ada yang dijadwalkan.':'Nothing scheduled yet.','Dari fitur lain':'From other features','selesai':'done',
+  'Ulang tahun':'Birthday','Anniversary':'Anniversary','Les / kursus':'Class / course','Piknik':'Picnic','Servis AC':'AC service','Servis mobil':'Car service',
+  'Tagihan':'Bill','Love Timeline':'Love Timeline','Date night':'Date night','Deadline project':'Project deadline','Project bisnis':'Business project','To-do':'To-do',
+  // to-do
+  'Tambah':'Add','Terlambat':'Overdue','Mendatang':'Upcoming','Tanpa tanggal':'No date','Progress minggu ini':"This week's progress",
+  'Tulis tugas baru… (misal: bayar iuran RT)':'Write a new task… (e.g. pay neighbourhood dues)','Belum ada yang selesai.':'Nothing completed yet.',
+  'Semua beres. Baby steps, tapi kita sampai. ✨':"All done. Baby steps, but we'll get there. ✨",
+  // links
+  'Cari link…':'Search links…','Tambah link':'Add link','Tidak ada yang cocok.':'No matches.',
+  'Simpan link Google Drive, portal sekolah, akun bank, dan dokumen penting di sini.':'Keep Google Drive links, school portals, bank accounts and important documents here.',
+  'Keuangan':'Finance','Rumah':'Home','Sekolah':'School','Kesehatan':'Health','Dokumen':'Documents',
+  // berdua
+  'Kita, hari ini':'Us, today','Ganti foto':'Change photo','Belum ada rencana date night.':'No date night planned yet.','Rencanakan':'Plan one','Terakhir':'Last',
+  'Bersama sejak':'Together since','Tambahkan momen pertama di Love Timeline.':'Add your first moment to the Love Timeline.','+ Tambah momen':'+ Add moment',
+  'Catat momen penting: pertama kali bertemu, ketemu lagi di 2018, anniversary…':'Record key moments: when you first met, meeting again in 2018, anniversaries…',
+  'Riwayat':'History','Ganti pertanyaan':'New question','Tulis jawaban':'Write answer','Belum lengkap':'Incomplete','Lengkap':'Complete',
+  'Sudah mengisi':'Filled in','Belum mengisi':'Not yet filled','Isi':'Fill in','Baca Our Story':'Read Our Story','Our Story muncul bila keduanya selesai.':'Our Story appears once you both finish.',
+  'Pilih profilmu dulu (pojok kiri bawah).':'Choose your profile first (bottom left).','Ilmu hari ini':"Today's insight",'Jurnal Keluarga':'Family journal','+ Tambah entri':'+ Add entry',
+  'Tulis cerita kecil hari ini — piknik, tawa, atau pelajaran.':"Write a small story from today — a picnic, a laugh, or a lesson.",
+  'Jawabanmu':'Your answer','Tulis dengan jujur, pelan-pelan saja…':'Write honestly, take your time…','Simpan jawaban':'Save answer','Riwayat jawaban':'Answer history','Belum ada jawaban.':'No answers yet.',
+  'Jawaban tersimpan':'Answer saved','Yang aku syukuri dari kita bulan ini':"What I'm grateful for about us this month",'Yang ingin kita perbaiki':'What we want to improve','Harapanku untuk bulan depan':'My hope for next month',
+  // pengaturan
+  'Umum':'General','Nama pasangan 1':'Partner 1 name','Nama pasangan 2':'Partner 2 name','Kurs USD → IDR (default untuk input baru)':'USD → IDR rate (default for new entries)',
+  'Sumber dana / rekening (pisahkan dengan koma)':'Funding sources / accounts (comma separated)','Kategori Link Penting (pisahkan dengan koma)':'Important link categories (comma separated)',
+  'Simpan pengaturan':'Save settings','Pengaturan tersimpan':'Settings saved','Profil di perangkat ini':'Profile on this device','Kamu saat ini:':'You are currently:','Berbagi dengan pasangan':'Sharing with your partner',
+  'Cadangan data':'Data backup','Salin semua data sebagai JSON, atau tempel JSON cadangan untuk memulihkan.':'Copy all data as JSON, or paste a JSON backup to restore.',
+  'Salin cadangan JSON':'Copy JSON backup','Pulihkan dari JSON':'Restore from JSON','Pulihkan':'Restore','Tempel cadangan JSON di sini':'Paste the JSON backup here',
+  'Data dengan ID yang sama akan ditimpa; data lain tidak dihapus.':'Records with the same ID are overwritten; other data is kept.','Cadangan disalin ke clipboard':'Backup copied to clipboard',
+  'Halo! Kamu siapa?':'Hi! Who are you?','Kamu siapa?':'Who are you?','Supaya komentar, jawaban, dan refleksi tercatat atas namamu.':'So comments, answers and reflections are saved under your name.',
+  // drawer
+  'Catat sesuatu':'Add something','Pengeluaran rutin':'Routine expense','Groceries, bensin, tagihan, langganan':'Groceries, fuel, bills, subscriptions','Pengeluaran lain-lain':'Other expense',
+  'Di luar pos rutin':'Outside routine items','Pemasukan rumah tangga':'Household income','Pembayaran klien & produk':'Client & product payments','Setoran tabungan':'Savings deposit',
+  'Saving umum atau ke pocket':'General savings or a pocket','Persentase atau nominal':'Percentage or fixed amount','Rumah & kegiatan':'Home & activities','Kegiatan kalender':'Calendar activity',
+  'Ulang tahun, les, servis':'Birthdays, classes, servicing','Tugas rumah dengan tanggal':'Household tasks with a date','Kartu baru di kanban':'New card on the kanban','Link penting':'Important link',
+  'Dokumen & tautan':'Documents & links','Momen':'Moment','Tambah ke Love Timeline':'Add to the Love Timeline','Rencanakan waktu berdua':'Plan time together','Jurnal keluarga':'Family journal','Cerita kecil hari ini':"Today's small story",
+  // forms
+  'Salary / pemasukan rumah':'salary / household income','Masuk ke':'Goes to','Saving umum (dibagi otomatis ke pocket)':'General savings (split automatically into pockets)','Angka minus = penarikan.':'Negative amount = withdrawal.',
+  'Pos rutin':'Routine item','Nama pos':'Item name','Kelompok':'Group','Nominal biasa (opsional)':'Usual amount (optional)','Ingatkan bayar setiap bulan':'Remind me to pay every month','Tanggal jatuh tempo (1–31)':'Due day (1–31)',
+  'Pos rutin baru':'New routine item','Ubah pos rutin':'Edit routine item','Atur pocket':'Pocket settings','Nama pocket':'Pocket name','Cara alokasi dari saving umum':'How to allocate from general savings',
+  'Persentase (%)':'Percentage (%)','Nominal tetap (Rp)':'Fixed amount (Rp)','Nominal tetap (IDR)':'Fixed amount (IDR)','Target (IDR, opsional)':'Target (IDR, optional)','Catatan':'Notes',
+  'Contoh: 10 → pocket mendapat 10% dari saving umum, dihitung otomatis.':'Example: 10 → the pocket gets 10% of general savings, calculated automatically.',
+  'Contoh: 5000000 → Rp 5 jt disisihkan dari saving umum; persentasenya dihitung otomatis.':'Example: 5000000 → Rp 5M is set aside from general savings; its percentage is calculated automatically.',
+  'Judul':'Title','Jenis':'Type','Berulang':'Repeats','Tidak berulang':'Does not repeat','Setiap tahun':'Every year','Setiap bulan':'Every month','Setiap N bulan':'Every N months',
+  'N bulan (untuk "Setiap N bulan")':'N months (for "Every N months")','Jam (opsional)':'Time (optional)',
+  'Ulang tahun & anniversary biasanya setiap tahun; servis AC/mobil setiap N bulan.':'Birthdays & anniversaries usually repeat yearly; AC/car servicing every N months.',
+  'Tambah kegiatan':'Add activity','Ubah kegiatan':'Edit activity','To-do baru':'New to-do','Ubah to-do':'Edit to-do','Tugas':'Task',
+  'Nama':'Name','Kategori':'Category','Ubah link':'Edit link','Tambah momen':'Add moment','Ubah momen':'Edit moment','Muncul setiap tahun di kalender.':'Shows up every year on the calendar.','Cerita singkat':'Short story',
+  'Rencanakan date night':'Plan a date night','Rencana':'Plan','Tempat':'Place','Budget (IDR)':'Budget (IDR)','Sudah terlaksana':'Already happened',
+  'Entri jurnal keluarga':'Family journal entry','Ubah entri jurnal':'Edit journal entry','Cerita':'Story',
+  'Detail project':'Project details','Judul project':'Project title','Deskripsi / catatan':'Description / notes','Status':'Status','Deadline':'Deadline','PIC':'Owner',
+  'Tulis komentar…':'Write a comment…','Belum ada komentar.':'No comments yet.','Berdua':'Together',
+  // event / question categories stay English; questions & tips
+  'Apa hal kecil yang bikin kamu merasa dicintai minggu ini?':'What small thing made you feel loved this week?','Kapan terakhir kamu merasa paling dekat sama aku?':'When did you last feel closest to me?',
+  'Kebiasaan kecil apa dari aku yang diam-diam kamu syukuri?':'Which small habit of mine are you quietly grateful for?','Apa satu hal yang ingin kita lakukan lebih sering berdua?':'What is one thing we should do together more often?',
+  'Bagaimana caraku paling bisa menenangkanmu saat kamu capek?':'How can I best calm you down when you are tired?','Momen apa tahun ini yang ingin kamu ulang lagi?':'Which moment this year would you like to relive?',
+  'Apa ketakutan terbesarmu yang jarang kamu ceritakan?':'What is your biggest fear that you rarely talk about?','Versi dirimu 10 tahun lalu akan bilang apa kalau lihat kamu sekarang?':'What would you from 10 years ago say if they saw you now?',
+  'Hal apa yang masih ingin kamu maafkan dari dirimu sendiri?':'What do you still want to forgive yourself for?','Kapan kamu merasa paling jadi diri sendiri?':'When do you feel most like yourself?',
+  'Nilai hidup apa yang paling kamu jaga sekarang?':'Which life value do you protect most right now?','Apa pelajaran terberat yang kamu dapat di usia 40-an?':'What is the hardest lesson you have learned in your 40s?',
+  'Kalau kita punya satu hari tanpa tanggung jawab, mau ngapain?':'If we had one day with no responsibilities, what would you do?','Makanan apa yang mau kamu makan tiap hari tanpa bosan?':'Which food could you eat every day without getting bored?',
+  'Kalau kita bikin kanal YouTube kedua, topiknya apa?':'If we started a second YouTube channel, what would it be about?','Lagu apa yang paling "kita banget"?':'Which song is the most "us"?',
+  'Liburan impian yang belum pernah kita omongin?':"A dream holiday we've never talked about?",'Kalau rumah kita punya nama, apa namanya?':'If our home had a name, what would it be?',
+  'Nilai apa yang paling ingin kita wariskan ke anak?':'Which value do we most want to pass on to our child?','Momen parenting apa minggu ini yang bikin kamu bangga?':'Which parenting moment this week made you proud?',
+  'Bagian mana dari pola asuh orang tua kita yang ingin kita ubah?':"Which part of our parents' parenting do we want to change?",'Bagaimana kita bisa lebih kompak saat beda pendapat soal anak?':'How can we be more united when we disagree about our child?',
+  'Kegiatan apa yang ingin kita coba bareng anak bulan ini?':'What activity do we want to try with our child this month?','Apa yang ingin kamu dengar dariku saat kamu lelah jadi orang tua?':'What do you want to hear from me when you are tired of parenting?',
+  'Pengeluaran apa bulan ini yang paling bikin kamu tenang?':'Which expense this month gave you the most peace of mind?','Satu target keuangan yang ingin kita capai tahun depan?':'One financial goal we want to reach next year?',
+  'Apa arti "cukup" buat kamu?':'What does "enough" mean to you?','Kebiasaan uang apa yang ingin kita perbaiki bareng?':'Which money habit do we want to fix together?',
+  'Kalau dapat rezeki tak terduga, mau dipakai untuk apa?':'If we got an unexpected windfall, what would we use it for?','Bagaimana kita bisa bantu orang tua tanpa mengorbankan tabungan kita?':'How can we help our parents without sacrificing our savings?',
+  'Rumah impian kita ada di mana dan seperti apa?':'Where is our dream home and what is it like?','Apa mimpi yang dulu kamu tunda dan masih ingin kamu kejar?':'Which dream did you put off that you still want to chase?',
+  'Lima tahun lagi, hari Minggu kita kayak apa?':'Five years from now, what do our Sundays look like?','Skill baru apa yang ingin kamu pelajari tahun depan?':'What new skill do you want to learn next year?',
+  'Tempat mana yang wajib kita kunjungi sebelum umur 50?':'Which place must we visit before turning 50?','Warisan apa yang ingin kita tinggalkan lewat Tara x Mattel?':'What legacy do we want to leave through Tara x Mattel?',
+  'Apa yang membuatmu merasa damai minggu ini?':'What made you feel at peace this week?','Hal apa yang paling kamu syukuri hari ini?':'What are you most grateful for today?',
+  'Bagaimana kamu menemukan makna saat hari terasa berat?':'How do you find meaning when the day feels heavy?','Ritual kecil apa yang bikin kamu merasa terhubung?':'Which small ritual makes you feel connected?',
+  'Doa atau harapan apa yang sedang kamu simpan?':'Which prayer or hope are you holding right now?','Apa yang ingin kamu lepaskan supaya hati lebih ringan?':'What do you want to let go of so your heart feels lighter?',
+  'Menghargai pasangan di depan orang lain memperkuat ikatan.':'Appreciating your partner in front of others strengthens your bond.','Mendengar tanpa buru-buru menasihati adalah bentuk sayang.':'Listening without rushing to advise is a form of love.',
+  'Uang yang dibicarakan bersama jarang jadi sumber pertengkaran.':'Money you talk about together rarely becomes a source of fights.','Hal kecil yang konsisten lebih berarti dari kejutan besar.':'Small consistent things mean more than big surprises.',
+  'Batasan yang sehat melindungi rumah kalian.':'Healthy boundaries protect your home.','Istirahat juga bagian dari produktivitas.':'Rest is part of productivity too.',
+  'Terima kasih yang spesifik terasa lebih tulus.':'A specific thank-you feels more sincere.','Pertengkaran bukan soal siapa menang.':"An argument isn't about who wins.",
+  'Tawa bersama adalah perekat yang murah.':'Laughing together is a cheap glue.','Merencanakan masa depan bersama menumbuhkan rasa aman.':'Planning the future together builds a sense of safety.',
+  'Sentuhan kecil menenangkan sistem saraf.':'Small touches calm the nervous system.','Ruang pribadi itu sehat, bukan tanda jarak.':'Personal space is healthy, not a sign of distance.',
+  'Rutinitas mingguan menjaga kapal tetap stabil.':'A weekly routine keeps the ship steady.','Mengakui kesalahan duluan itu kekuatan.':'Admitting a mistake first is a strength.',
+  'Kenangan perlu dirawat supaya tetap hangat.':'Memories need care to stay warm.','Pelan-pelan, tapi kita sampai.':"Slowly, but we'll get there.",
+  'Sampaikan pujian tulus untuk pasanganmu di depan keluarga atau teman.':'Give your partner sincere praise in front of family or friends.','Saat pasangan cerita, tanyakan: "Kamu mau didengar atau dibantu cari solusi?"':'When your partner shares, ask: "Do you want me to listen or help find a solution?"',
+  'Luangkan 15 menit untuk cek pengeluaran minggu ini berdua.':"Take 15 minutes to review this week's spending together.",'Siapkan minuman favorit pasangan tanpa diminta.':"Make your partner's favourite drink without being asked.",
+  'Sepakati satu hal yang tidak dibahas dengan keluarga besar.':'Agree on one topic you will not discuss with the wider family.','Matikan notifikasi kerja satu jam lebih awal malam ini.':'Turn off work notifications an hour earlier tonight.',
+  'Ucapkan terima kasih untuk satu hal spesifik yang pasangan lakukan hari ini.':'Thank your partner for one specific thing they did today.','Kalau ada beda pendapat, mulai dengan "Aku merasa…" bukan "Kamu selalu…".':'When you disagree, start with "I feel…" instead of "You always…".',
+  'Tonton satu video lucu bareng sebelum tidur.':'Watch one funny video together before bed.','Tulis satu mimpi bersama di Jurnal Keluarga hari ini.':'Write one shared dream in the Family Journal today.',
+  'Peluk pasangan 20 detik saat bertemu sore ini.':'Hug your partner for 20 seconds when you meet this afternoon.','Beri pasangan waktu sendiri satu jam tanpa merasa bersalah.':'Give your partner an hour to themselves without guilt.',
+  'Jadwalkan "rapat rumah tangga" 20 menit setiap Minggu sore.':'Schedule a 20-minute "household meeting" every Sunday afternoon.','Kalau kemarin ada yang kurang pas, minta maaf duluan hari ini.':"If something felt off yesterday, apologise first today.",
+  'Lihat lagi satu foto lama berdua dan ceritakan momennya.':'Look at one old photo together and tell the story behind it.','Pilih satu tugas rumah yang tertunda dan selesaikan bareng.':'Pick one overdue household task and finish it together.',
+};
+const EN_RULES = [
+  [/^(Selamat pagi|Selamat siang|Selamat sore|Selamat malam), (.+)$/, (m,a,b) => `${({'Selamat pagi':'Good morning','Selamat siang':'Good afternoon','Selamat sore':'Good afternoon','Selamat malam':'Good evening'})[a]}, ${b}`],
+  [/^Halo, (.+)$/, (m,a) => `Hi, ${a}`],
+  [/^Jatuh tempo tgl (\d+)$/, (m,a) => `Due on day ${a}`],
+  [/^(\d+) transaksi$/, (m,a) => `${a} transaction${a==='1'?'':'s'}`],
+  [/^(\d+) aktif$/, (m,a) => `${a} active`],
+  [/^\+(\d+) lagi$/, (m,a) => `+${a} more`],
+  [/^([\d.,]+) hari$/, (m,a) => `${a} days`],
+  [/^(\d+)% teralokasi$/, (m,a) => `${a}% allocated`],
+  [/^(\d+)% dari saving umum$/, (m,a) => `${a}% of general savings`],
+  [/^(\d+)% dari target (.+)$/, (m,a,b) => `${a}% of the ${b} target`],
+  [/^Alokasi (.+?) \(≈(.+)% dari saving umum\) \+ setoran langsung (.+)$/, (m,a,b,c) => `Allocated ${a} (≈${b}% of general savings) + direct deposits ${c}`],
+  [/^Alokasi (.+) \+ setoran langsung (.+)$/, (m,a,b) => `Allocated ${a} + direct deposits ${b}`],
+  [/^Tetap (.+)$/, (m,a) => `Fixed ${a}`],
+  [/^Biasanya (.+)$/, (m,a) => `Usually ${a}`],
+  [/^Rasio saving (.+)$/, (m,a) => `Savings rate ${a}`],
+  [/^Rutin ([^·]+)$/, (m,a) => `Routine ${a}`],
+  [/^Lain ([^·]+)$/, (m,a) => `Other ${a}`],
+  [/^Setoran periode ini (.+)$/, (m,a) => `Deposited this period ${a}`],
+  [/^Setoran (.+):$/, (m,a) => `Deposits ${a}:`],
+  [/^Akumulasi tahun (\d+):$/, (m,a) => `${a} total:`],
+  [/^Akumulasi (\d+):$/, (m,a) => `${a} total:`],
+  [/^Status bayar: (.+)$/, (m,a) => `Payment status: ${a}`],
+  [/^Komentar \((\d+)\)$/, (m,a) => `Comments (${a})`],
+  [/^Aktif \((\d+)\)$/, (m,a) => `Active (${a})`],
+  [/^Selesai \((\d+)\)$/, (m,a) => `Done (${a})`],
+  [/^Reflection (.+?)( · (.+))?$/, (m,a,b,c) => `Reflection ${a}${c?' · '+c:''}`],
+  [/^Saya (.+)$/, (m,a) => `I'm ${a}`],
+  [/^sejak (.+)$/, (m,a) => `since ${a}`],
+  [/^(\d+) masih terbuka$/, (m,a) => `${a} still open`],
+  [/^tugas selesai dalam 7 hari terakhir$/, () => 'tasks completed in the last 7 days'],
+  [/^Bayar (.+)$/, (m,a) => `Pay ${a}`],
+  [/^Tagihan ([^·]+)$/, (m,a) => `${a} bill`],
+  [/^Catat (.+)$/, (m,a) => `Add ${trEN(a).replace(/^./, c => c.toLowerCase())}`],
+  [/^Deadline: (.+)$/, (m,a) => `Deadline: ${a}`],
+  [/^PIC (.+)$/, (m,a) => `Owner ${a}`],
+  [/^Pocket: (.+)$/, (m,a) => `Pocket: ${a}`],
+  [/^Tahun (\d+)$/, (m,a) => `Year ${a}`],
+  [/^(.+) \((Kebutuhan Harian|Kebutuhan Mingguan|Kebutuhan Bulanan|Iuran & Cicilan|Kartu Kredit & PayLater|Langganan|Lainnya)\)$/, (m,a,b) => `${a} (${EN_DICT[b]})`],
+  [/^Hari ini coba: (.+)$/, (m,a) => `Try today: ${trEN(a)}`],
+  [/^masuk sebagai (.+)$/, (m,a) => `signed in as ${a}`],
+  [/^Link masuk sudah dikirim ke$/, () => 'A sign-in link has been sent to'],
+  [/^Isi daftar bawaan \((\d+) pos\)$/, (m,a) => `Load default list (${a} items)`],
+  [/^\. Buka email itu di perangkat ini lalu klik linknya\.$/, () => '. Open that email on this device and tap the link.'],
+  [/^(\d+) data dipulihkan$/, (m,a) => `${a} records restored`],
+];
+function trEN(s){
+  if(EN_DICT[s] != null) return EN_DICT[s];
+  for(const [re, fn] of EN_RULES){ const m = s.match(re); if(m) return fn(...m); }
+  if(s.startsWith('· ')) return '· ' + trEN(s.slice(2));
+  if(s.includes(' · ')){ const parts = s.split(' · '); const t = parts.map(trEN); if(t.some((x,i)=>x!==parts[i])) return t.join(' · '); }
+  if(/^"(.+)"$/.test(s)){ const inner = s.slice(1,-1), t = trEN(inner); if(t !== inner) return `"${t}"`; }
+  return s;
+}
+function translateTree(root){
+  if(!EN() || !root) return;
+  if(root.nodeType === 3){ trNode(root); return; }
+  if(root.nodeType !== 1 || root.closest?.('textarea,script,style')) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = []; let n; while((n = w.nextNode())) nodes.push(n);
+  nodes.forEach(trNode);
+  const els = root.matches?.('[placeholder],[title],[aria-label]') ? [root] : [];
+  root.querySelectorAll?.('[placeholder],[title],[aria-label]').forEach(e => els.push(e));
+  els.forEach(e => ['placeholder','title','aria-label'].forEach(a => { const v = e.getAttribute(a); if(v){ const t = trEN(v.trim()); if(t !== v.trim()) e.setAttribute(a, t); } }));
+}
+function trNode(node){
+  const p = node.parentElement; if(!p || p.closest('textarea,script,style')) return;
+  const raw = node.nodeValue, t = raw.trim(); if(!t) return;
+  const out = trEN(t); if(out !== t) node.nodeValue = raw.replace(t, out);
+}
+new MutationObserver(muts => { if(!EN()) return; muts.forEach(m => m.addedNodes.forEach(translateTree)); })
+  .observe(document.body, {childList:true, subtree:true});
+document.documentElement.lang = LANG;
 
 ui.page = PAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'beranda';
 init();
