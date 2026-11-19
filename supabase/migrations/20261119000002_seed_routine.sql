@@ -1,0 +1,28 @@
+-- Pos transaksi rutin bawaan (bisa diubah dari aplikasi)
+insert into public.docs (col, id, data) values
+  ('routineItems','r01','{"id":"r01","name":"Alfagift / Indomaret","group":"Kebutuhan Harian","dueDay":null,"reminder":false,"currency":"IDR","defAmount":0,"order":0,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r02','{"id":"r02","name":"Food","group":"Kebutuhan Harian","dueDay":null,"reminder":false,"currency":"IDR","defAmount":0,"order":1,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r03','{"id":"r03","name":"Groceries","group":"Kebutuhan Harian","dueDay":null,"reminder":false,"currency":"IDR","defAmount":0,"order":2,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r04','{"id":"r04","name":"Bensin","group":"Kebutuhan Harian","dueDay":null,"reminder":false,"currency":"IDR","defAmount":0,"order":3,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r05','{"id":"r05","name":"Internet","group":"Kebutuhan Harian","dueDay":20,"reminder":true,"currency":"IDR","defAmount":0,"order":4,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r06','{"id":"r06","name":"Orang Tua","group":"Kebutuhan Harian","dueDay":null,"reminder":false,"currency":"IDR","defAmount":0,"order":5,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r07','{"id":"r07","name":"Sekolah","group":"Kebutuhan Harian","dueDay":10,"reminder":true,"currency":"IDR","defAmount":0,"order":6,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r08','{"id":"r08","name":"Iuran Air","group":"Iuran & Cicilan","dueDay":20,"reminder":true,"currency":"IDR","defAmount":0,"order":7,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r09','{"id":"r09","name":"Iuran Sampah","group":"Iuran & Cicilan","dueDay":10,"reminder":true,"currency":"IDR","defAmount":0,"order":8,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r10','{"id":"r10","name":"Iuran RT","group":"Iuran & Cicilan","dueDay":10,"reminder":true,"currency":"IDR","defAmount":0,"order":9,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r11','{"id":"r11","name":"Cicilan Rumah","group":"Iuran & Cicilan","dueDay":5,"reminder":true,"currency":"IDR","defAmount":0,"order":10,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r12','{"id":"r12","name":"Honest","group":"Kartu Kredit & PayLater","dueDay":15,"reminder":true,"currency":"IDR","defAmount":0,"order":11,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r13','{"id":"r13","name":"Akulaku","group":"Kartu Kredit & PayLater","dueDay":15,"reminder":true,"currency":"IDR","defAmount":0,"order":12,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r14','{"id":"r14","name":"GoPay Later","group":"Kartu Kredit & PayLater","dueDay":15,"reminder":true,"currency":"IDR","defAmount":0,"order":13,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r15','{"id":"r15","name":"Shopee PayLater","group":"Kartu Kredit & PayLater","dueDay":15,"reminder":true,"currency":"IDR","defAmount":0,"order":14,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r16','{"id":"r16","name":"Netflix","group":"Langganan","dueDay":1,"reminder":true,"currency":"IDR","defAmount":0,"order":15,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r17','{"id":"r17","name":"Prime Video","group":"Langganan","dueDay":1,"reminder":true,"currency":"IDR","defAmount":0,"order":16,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r18','{"id":"r18","name":"Claude","group":"Langganan","dueDay":1,"reminder":true,"currency":"USD","defAmount":0,"order":17,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r19','{"id":"r19","name":"Gemini","group":"Langganan","dueDay":1,"reminder":true,"currency":"IDR","defAmount":0,"order":18,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r20','{"id":"r20","name":"Apple","group":"Langganan","dueDay":1,"reminder":true,"currency":"IDR","defAmount":0,"order":19,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r21','{"id":"r21","name":"Google One","group":"Langganan","dueDay":1,"reminder":true,"currency":"IDR","defAmount":0,"order":20,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r22','{"id":"r22","name":"Spotify","group":"Langganan","dueDay":1,"reminder":true,"currency":"IDR","defAmount":0,"order":21,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r23','{"id":"r23","name":"CapCut","group":"Langganan","dueDay":1,"reminder":true,"currency":"IDR","defAmount":0,"order":22,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r24','{"id":"r24","name":"Supabase","group":"Langganan","dueDay":1,"reminder":true,"currency":"USD","defAmount":0,"order":23,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb),
+  ('routineItems','r25','{"id":"r25","name":"YouTube Editor","group":"Langganan","dueDay":1,"reminder":true,"currency":"IDR","defAmount":0,"order":24,"createdAt":1795060964053,"updatedAt":1795060964053}'::jsonb)
+on conflict (col, id) do nothing;
